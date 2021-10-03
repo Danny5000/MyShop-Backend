@@ -17,10 +17,7 @@ router
 
 router
   .route("/cart/:userid/:productid")
-  .post(isAuthenticatedUser, authorizeRoles("user", "admin"), addToCart);
-
-router
-  .route("/cart/:userid/:entryid")
+  .post(isAuthenticatedUser, authorizeRoles("user", "admin"), addToCart)
   .put(isAuthenticatedUser, authorizeRoles("user", "admin"), updateCart)
   .delete(isAuthenticatedUser, authorizeRoles("user", "admin"), deleteFromCart);
 
