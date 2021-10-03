@@ -51,9 +51,11 @@ app.use(
 //--------------Routes------------------
 const auth = require("./routes/auth");
 const products = require("./routes/products");
+const cart = require("./routes/cart");
 
 app.use("/api/v1", auth);
 app.use("/api/v1", products);
+app.use("/api/v1", cart);
 
 //Handle unhandled routes
 app.all("*", (req, res, next) => {

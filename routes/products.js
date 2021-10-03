@@ -4,7 +4,9 @@ const router = express.Router();
 //Product controller functions
 const {
   getProducts,
+  getProductById,
   newProduct,
+  updateProduct,
   deleteProduct,
 } = require("../controllers/productController");
 
@@ -17,6 +19,8 @@ router
 
 router
   .route("/product/:id")
+  .get(getProductById)
+  .put(isAuthenticatedUser, authorizeRoles("user", "admin"), updateProduct)
   .delete(isAuthenticatedUser, authorizeRoles("user", "admin"), deleteProduct);
 
 module.exports = router;
