@@ -91,16 +91,18 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
             runValidators: true,
           }
         );
-
-        user = await User.findById(req.params.userid);
       } catch (err) {
         return next(new ErrorHandler(`${err.message}`, 500));
       }
+
+      user = await User.findById(req.params.userid);
+      const cartTotal = getTotal(user.cart);
 
       return res.status(200).json({
         success: true,
         message: "Cart Entry Updated",
         data: user.cart,
+        cartTotal,
       });
     }
   }
@@ -130,11 +132,13 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
   );
 
   user = await User.findById(req.params.userid);
+  const cartTotal = getTotal(user.cart);
 
   res.status(200).json({
     success: true,
     message: "Product has been added to cart",
     data: user.cart,
+    cartTotal,
   });
 });
 
@@ -176,11 +180,13 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
       );
 
       user = await User.findById(req.params.userid);
+      const cartTotal = getTotal(user.cart);
 
       return res.status(200).json({
         success: true,
         message: "Product has been deleted from cart",
         data: user.cart,
+        cartTotal,
       });
     }
   }
@@ -243,10 +249,12 @@ exports.updateCart = catchAsyncErrors(async (req, res, next) => {
   user = await User.findById(req.params.userid);
 
   const cartItems = user.cart;
+  const cartTotal = getTotal(cartItems);
 
   res.status(200).json({
     success: true,
     message: "Entry updated",
     cart: cartItems,
+    cartTotal,
   });
 });

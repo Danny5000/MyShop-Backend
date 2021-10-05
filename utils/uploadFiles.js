@@ -6,7 +6,7 @@ const uploadFiles = (file, req) => {
   // Check file type
   const supportedFiles = /.jpeg|.jpg|.png|.svg/;
   if (!supportedFiles.test(path.extname(file.name))) {
-    return next(new ErrorHandler("Please upload document file.", 400));
+    return next(new ErrorHandler("Please upload an image file.", 400));
   }
 
   // Check doucument size
