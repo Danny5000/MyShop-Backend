@@ -165,7 +165,8 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
   //Check cart to see if the product is still in the cart before deleting
   for (let i = 0; i < cartItems.length; i++) {
     if (cartItems[i].productId === req.params.productid) {
-      //Push a new product & its selected quantity into the cart
+      const item = cartItems[i].productName;
+      //Push a new product & its selected quantity into the cart  item = cartItems[i].name
       user = await User.findByIdAndUpdate(
         req.params.userid,
         {
@@ -180,13 +181,13 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
       );
 
       user = await User.findById(req.params.userid);
-      const cartTotal = getTotal(user.cart);
+      const totalPrice = getTotal(user.cart);
 
       return res.status(200).json({
-        success: true,
-        message: "Product has been deleted from cart",
         data: user.cart,
-        cartTotal,
+        success: true,
+        totalPrice,
+        message: `Item "${item}" was removed from the cart.`,
       });
     }
   }
