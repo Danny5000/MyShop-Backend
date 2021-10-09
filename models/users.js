@@ -55,9 +55,9 @@ const userSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.__v;
       },
-      //virtuals: true
+      virtuals: true,
     },
-    //toObject: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
@@ -82,5 +82,12 @@ userSchema.methods.getJwtToken = function () {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.virtual("productData", {
+  ref: "Product",
+  localField: "_id",
+  foreignField: "user",
+  justOne: false,
+});
 
 module.exports = mongoose.model("User", userSchema);

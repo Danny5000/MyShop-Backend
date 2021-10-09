@@ -8,7 +8,7 @@ const uploadFiles = require("../utils/uploadFiles");
 exports.getProducts = catchAsyncErrors(async (req, res, next) => {
   const products = await Product.find().populate({
     path: "userData",
-    select: "userName",
+    select: "userName -_id",
   });
 
   res.status(200).json({
@@ -20,7 +20,10 @@ exports.getProducts = catchAsyncErrors(async (req, res, next) => {
 
 //Get product by id => /api/v1/product/:id
 exports.getProductById = catchAsyncErrors(async (req, res, next) => {
-  const product = await Product.findById(req.params.id);
+  const product = await Product.findById(req.params.id).populate({
+    path: "userData",
+    select: "userName -_id",
+  });
 
   res.status(200).json({
     success: true,
