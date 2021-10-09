@@ -29,3 +29,26 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
     username,
   });
 });
+
+//Get all users data => /api/v1/users
+exports.getUsers = catchAsyncErrors(async (req, res, next) => {
+  const userData = await User.find().select("-cart -isActive -role");
+
+  res.status(200).json({
+    success: true,
+    userData,
+  });
+});
+
+//Get user by username => /api/v1/user/:username
+exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
+  const userName = req.params.username;
+  const userData = await User.find({ userName }).select(
+    "-cart -isActive -role"
+  );
+
+  res.status(200).json({
+    success: true,
+    userData,
+  });
+});
