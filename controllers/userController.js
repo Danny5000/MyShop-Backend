@@ -52,3 +52,16 @@ exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
     userData,
   });
 });
+
+//Get user by username => /api/v1/user/:id
+exports.getUserById = catchAsyncErrors(async (req, res, next) => {
+  const user = req.params.id;
+  const userData = await User.find({ _id: user }).select(
+    "-cart -isActive -role"
+  );
+
+  res.status(200).json({
+    success: true,
+    userData,
+  });
+});

@@ -6,7 +6,10 @@ const uploadFiles = require("../utils/uploadFiles");
 
 //Get all products => /api/v1/products
 exports.getProducts = catchAsyncErrors(async (req, res, next) => {
-  const products = await Product.find();
+  const products = await Product.find().populate({
+    path: "userData",
+    select: "userName",
+  });
 
   res.status(200).json({
     success: true,

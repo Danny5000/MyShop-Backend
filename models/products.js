@@ -40,7 +40,9 @@ const productSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.__v;
       },
+      virtuals: true,
     },
+    toObject: { virtuals: true },
   }
 );
 
@@ -49,6 +51,13 @@ productSchema.pre("save", function (next) {
   //Creating slug before saving to DB
   this.slug = slugify(this.name, { lower: true });
   next();
+});
+
+productSchema.virtual("userData", {
+  ref: "User",
+  localField: "user",
+  foreignField: "_id",
+  justOne: false,
 });
 
 module.exports = mongoose.model("Product", productSchema);
