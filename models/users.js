@@ -9,19 +9,22 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "Please enter your name"],
+      trim: true,
     },
     userName: {
       type: String,
       required: [true, "Please enter your username"],
       unique: true,
-      minLength: [6, "Your username should be at least 6 characters long."],
+      minLength: [2, "Your username should be at least 6 characters long."],
       maxLength: [12, "Your username cannot be more than 12 characters long."],
+      trim: true,
     },
     email: {
       type: String,
       required: [true, "Please enter your email address"],
       unique: true,
       validate: [validator.isEmail, "Please enter a valid email address"],
+      trim: true,
     },
     role: {
       type: String,
@@ -32,6 +35,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please enter a password for your account"],
       minLength: [8, "Your password must be atleast 8 characters long"],
       select: false,
+      trim: true,
     },
     isActive: {
       type: Boolean,
@@ -62,7 +66,12 @@ const userSchema = new mongoose.Schema(
 );
 
 //Encrypting passwords before saving
+//Removing spaces from username
 userSchema.pre("save", async function (next) {
+  //Remove any spaces in the username
+  this.userName = this.userName.replaceAll(/\s+/g, "");
+
+  //If the password is not being modified, do not call the hash function
   if (!this.isModified("password")) {
     next();
   }

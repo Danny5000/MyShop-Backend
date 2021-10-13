@@ -31,7 +31,7 @@ module.exports = (err, req, res, next) => {
 
     // Handle mongoose duplicate key error
     if (err.code === 11000) {
-      const message = `Duplicate ${Object.keys(err.keyValue)} entered.`;
+      const message = `The ${Object.keys(err.keyValue)} is already in use.`;
       error = new ErrorHandler(message, 400);
     }
 

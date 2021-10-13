@@ -19,7 +19,6 @@ const sendToken = (user, statusCode, res) => {
     success: true,
     id: user.id,
     userName: user.userName,
-    token,
   });
 };
 

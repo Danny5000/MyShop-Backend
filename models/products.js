@@ -8,25 +8,30 @@ const productSchema = new mongoose.Schema(
       required: [true, "Please enter a product name"],
       minLength: [2, "Product name must be at least 2 characters long"],
       maxLength: [12, "Product name can be at most 12 characters long"],
+      trim: true,
     },
     slug: String,
     description: {
       type: String,
       required: [true, "Please enter a description for the product"],
       minLength: [10, "Description must be at least 10 characters long"],
+      trim: true,
     },
     imageUrl: {
       type: String,
       required: [true, "Please upload an image"],
+      trim: true,
     },
     price: {
       type: Number,
       required: [true, "Please enter a price."],
+      trim: true,
     },
     quantity: {
       type: Number,
       required: [true, "Please enter a quantity."],
       min: [1, "Quantaty must be at least 1"],
+      trim: true,
     },
     user: {
       type: mongoose.Schema.ObjectId,

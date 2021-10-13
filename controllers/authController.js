@@ -15,10 +15,7 @@ exports.registerUser = catchAsyncErrors(async (req, res, next) => {
     password,
   });
 
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
+  sendToken(user, 200, res);
 });
 
 // Login user => /api/v1/login
