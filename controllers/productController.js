@@ -3,6 +3,7 @@ const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const deleteFiles = require("../utils/deleteFiles");
 const uploadFiles = require("../utils/uploadFiles");
+const path = require("path");
 const v4 = require("uuid/v4");
 
 //Get all products => /api/v1/products
@@ -51,9 +52,20 @@ exports.newProduct = catchAsyncErrors(async (req, res, next) => {
 
   req.body.imageUrl = file.name;
 
-  const product = await Product.create(req.body);
+  // Check file type
+  const supportedFiles = /.jpeg|.jpg|.png|.svg/;
+  if (!supportedFiles.test(path.extname(file.name))) {
+    return next(new ErrorHandler("Please upload an image file.", 400));
+  }
 
-  uploadFiles(file, file.name);
+  // Check doucument size
+  if (file.size > process.env.MAX_FILE_SIZE) {
+    return next(new ErrorHandler("Please upload file less than 2MB.", 400));
+  }
+
+  await Product.create(req.body);
+
+  uploadFiles(file, file.name, next);
 
   res.status(200).json({
     success: true,

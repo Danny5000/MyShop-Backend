@@ -19,7 +19,7 @@ const sendToken = (user, statusCode, res) => {
     token,
     success: true,
     id: user.id,
-    userName: user.userName,
+    username: user.userName,
   });
 };
 
