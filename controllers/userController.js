@@ -48,7 +48,7 @@ exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
     { cart: 0, role: 0, isActive: 0 }
   ).populate({
     path: "productData",
-    select: "name description price quantity imageUrl -user",
+    select: "name description price quantity imageUrl user",
   });
 
   res.status(200).json({

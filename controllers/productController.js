@@ -47,6 +47,9 @@ exports.newProduct = catchAsyncErrors(async (req, res, next) => {
 
   req.body.imageUrl = fileName;
 
+  req.body.price = parseInt(req.body.price);
+  req.body.quantity = parseInt(req.body.quantity);
+
   const product = await Product.create(req.body);
 
   res.status(200).json({
