@@ -3,6 +3,7 @@ const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const deleteFiles = require("../utils/deleteFiles");
 const uploadFiles = require("../utils/uploadFiles");
+const v4 = require("uuid/v4");
 
 //Get all products => /api/v1/products
 exports.getProducts = catchAsyncErrors(async (req, res, next) => {
@@ -43,19 +44,20 @@ exports.newProduct = catchAsyncErrors(async (req, res, next) => {
 
   const file = req.files.imageUrl;
 
-  const fileName = uploadFiles(file, req);
+  const pictureId = v4();
 
-  req.body.imageUrl = fileName;
+  // Renaming product file
+  file.name = `${req.user.id}_${pictureId}_${file.name}`;
 
-  req.body.price = parseInt(req.body.price);
-  req.body.quantity = parseInt(req.body.quantity);
+  req.body.imageUrl = file.name;
 
   const product = await Product.create(req.body);
 
+  uploadFiles(file, file.name);
+
   res.status(200).json({
     success: true,
-    message: "Product Created",
-    data: product,
+    message: "Your product was added successfully.",
   });
 });
 

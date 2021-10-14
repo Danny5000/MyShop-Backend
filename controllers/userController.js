@@ -24,7 +24,6 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
   const username = user.userName;
 
   res.status(200).json({
-    success: true,
     id,
     username,
   });
