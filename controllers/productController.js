@@ -92,23 +92,26 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (req.files) {
-    const prodImage = product.imageUrl;
-    deleteFiles(prodImage);
     const file = req.files.imageUrl;
-    const fileName = uploadFiles(file, req);
-    req.body.imageUrl = fileName;
+    const pictureId = v4();
+    file.name = `${req.user.id}_${pictureId}_${file.name}`;
+    const fileName = uploadFiles(file, file.name, next);
+
+    if (fileName) {
+      const prodImage = product.imageUrl;
+      deleteFiles(prodImage);
+      req.body.imageUrl = fileName;
+    }
   }
 
   product = await Product.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
-    useFindAndModify: false,
   });
 
   res.status(200).json({
     success: true,
     message: "Product has been updated.",
-    data: product,
   });
 });
 
