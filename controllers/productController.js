@@ -93,21 +93,21 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
 
   if (req.files) {
     const file = req.files.imageUrl;
+    const prodImage = product.imageUrl;
     const pictureId = v4();
     file.name = `${req.user.id}_${pictureId}_${file.name}`;
-    const fileName = uploadFiles(file, file.name, next);
+    req.body.imageUrl = file.name;
 
-    if (fileName) {
-      const prodImage = product.imageUrl;
+    product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (file) {
+      uploadFiles(file, file.name, next);
       deleteFiles(prodImage);
-      req.body.imageUrl = fileName;
     }
   }
-
-  product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
 
   res.status(200).json({
     success: true,
