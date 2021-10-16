@@ -81,6 +81,8 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Product not found", 404));
   }
 
+  const prodImage = product.imageUrl;
+
   //Check whether the current user is the product owner
   if (product.user.toString() !== req.user.id && req.user.role !== "admin") {
     return next(
@@ -91,9 +93,18 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+  //If user selects a file on front-end and then unselects
+  if (req.files === null) {
+    req.body.imageUrl = prodImage;
+  }
+
+  product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
   if (req.files) {
     const file = req.files.imageUrl;
-    const prodImage = product.imageUrl;
     const pictureId = v4();
     file.name = `${req.user.id}_${pictureId}_${file.name}`;
     req.body.imageUrl = file.name;
