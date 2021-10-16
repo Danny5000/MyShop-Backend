@@ -107,6 +107,16 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
     const file = req.files.imageUrl;
     const pictureId = v4();
     file.name = `${req.user.id}_${pictureId}_${file.name}`;
+    const supportedFiles = /.jpeg|.jpg|.png|.svg/;
+
+    if (!supportedFiles.test(path.extname(file.name))) {
+      return next(new ErrorHandler("Please upload an image file.", 400));
+    }
+
+    // Check doucument size
+    if (file.size > process.env.MAX_FILE_SIZE) {
+      return next(new ErrorHandler("Please upload file less than 2MB.", 400));
+    }
     req.body.imageUrl = file.name;
 
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
