@@ -29,7 +29,7 @@ exports.getCart = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
     data: cartItems,
-    totalPrice,
+    cartTotal: totalPrice,
   });
 });
 
@@ -186,7 +186,7 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
       return res.status(200).json({
         data: user.cart,
         success: true,
-        totalPrice,
+        cartTotal: totalPrice,
         message: `Item "${item}" was removed from the cart.`,
       });
     }
@@ -254,8 +254,7 @@ exports.updateCart = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Entry updated",
-    cart: cartItems,
+    data: cartItems,
     cartTotal,
   });
 });
