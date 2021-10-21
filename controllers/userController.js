@@ -31,7 +31,9 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
 
 //Get all users data => /api/v1/users
 exports.getUsers = catchAsyncErrors(async (req, res, next) => {
-  const userData = await User.find().select("-_id -cart -isActive -role");
+  const userData = await User.find().select(
+    "-_id -cart -isActive -role -myProductsPurchased -orderHistory"
+  );
 
   res.status(200).json({
     success: true,
@@ -44,7 +46,7 @@ exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
   const userName = req.params.username;
   const userData = await User.find(
     { userName },
-    { cart: 0, role: 0, isActive: 0 }
+    { cart: 0, role: 0, isActive: 0, myProductsPurchased: 0, orderHistory: 0 }
   ).populate({
     path: "productData",
     select: "name description price quantity imageUrl user",
@@ -60,7 +62,7 @@ exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
 exports.getUserById = catchAsyncErrors(async (req, res, next) => {
   const user = req.params.id;
   const userData = await User.find({ _id: user }).select(
-    "-_id -cart -isActive -role"
+    "-_id -cart -isActive -role -myProductsPurchased -orderHistory"
   );
 
   res.status(200).json({

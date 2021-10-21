@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Please enter a quantity."],
-      min: [1, "Quantaty must be at least 1"],
+      min: [0, "Quantity cannot be below 0"],
       trim: true,
     },
     user: {

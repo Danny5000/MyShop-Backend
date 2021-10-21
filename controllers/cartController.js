@@ -74,6 +74,13 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
         return next(
           new ErrorHandler(`The quantity must be a whole number.`, 400)
         );
+      } else if (newQuantity > product.quantity) {
+        return next(
+          new ErrorHandler(
+            `You cannot add more than the current stock (${product.quantity}).`,
+            400
+          )
+        );
       }
       const total = cartItems[i].productPrice * newQuantity;
 
@@ -107,12 +114,22 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
     }
   }
 
+  if (req.body.quantity > product.quantity) {
+    return next(
+      new ErrorHandler(
+        `You cannot add more than the current stock (${product.quantity}).`,
+        400
+      )
+    );
+  }
+
   const total = product.price * req.body.quantity;
 
   const cartEntry = {
     productId: product.id,
     productName: product.name,
     productPrice: product.price,
+    seller: product.user,
     quantity: req.body.quantity,
     total,
   };
@@ -229,6 +246,15 @@ exports.updateCart = catchAsyncErrors(async (req, res, next) => {
     req.body.quantity < 1
   ) {
     return next(new ErrorHandler(`A quantity of atleast 1 is required.`, 400));
+  }
+
+  if (req.body.quantity > product.quantity) {
+    return next(
+      new ErrorHandler(
+        `You cannot add more than the current stock (${product.quantity}).`,
+        400
+      )
+    );
   }
 
   const total = product.price * req.body.quantity;

@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema(
     cart: {
       type: [Object],
     },
+    orderHistory: {
+      type: [Object],
+    },
+    myProductsPurchased: {
+      type: [Object],
+    },
     createdAt: {
       type: Date,
       default: Date.now,
