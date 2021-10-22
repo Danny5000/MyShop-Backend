@@ -2,7 +2,6 @@ const User = require("../models/users");
 const Product = require("../models/products");
 const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-const getTotal = require("../utils/getTotal");
 const v4 = require("uuid/v4");
 
 exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
@@ -22,36 +21,24 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+  let message = "";
   const cartItems = user.cart;
   const orderId = v4();
   const orderDate = new Date(Date.now()).toUTCString();
 
   for (let i = 0; i < cartItems.length; i++) {
     const seller = await User.findById(cartItems[i].seller);
-    let order = {};
-
-    if (!seller) {
-      return next(new ErrorHandler("Something went wrong.", 500));
-    }
 
     const product = await Product.findById(cartItems[i].productId);
 
-    if (!product) {
-      return next(new ErrorHandler("Something went wrong.", 500));
-    }
-
-    if (seller.id == cartItems[i].seller) {
-      order.item = cartItems[i];
-      order.orderDate = orderDate;
-      order.orderId = orderId;
-      order.purchasedByName = user.name;
-      order.purchasedByEmail = user.email;
+    if (!seller) {
+      message += `The seller for ${cartItems[i].productName} no longer exists. \n`;
 
       await User.findByIdAndUpdate(
-        seller.id,
+        req.params.userid,
         {
-          $push: {
-            myProductsPurchased: order,
+          $pull: {
+            cart: { productId: `${cartItems[i].productId}` },
           },
         },
         {
@@ -59,7 +46,55 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           runValidators: true,
         }
       );
+    } else if (!product) {
+      message += `Product "${cartItems[i].productName}" no longer exists or has been removed. \n`;
 
+      await User.findByIdAndUpdate(
+        req.params.userid,
+        {
+          $pull: {
+            cart: { productId: `${cartItems[i].productId}` },
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    } else if (cartItems[i].quantity > product.quantity) {
+      message += `The quantiy of ${cartItems[i].quantity} you selected for item "${cartItems[i].productName}" exceeds the available stock of ${product.quantity}. \n`;
+
+      const total = product.price * product.quantity;
+
+      if (product.quantity == 0) {
+        await User.findByIdAndUpdate(
+          req.params.userid,
+          {
+            $pull: {
+              cart: { productId: `${cartItems[i].productId}` },
+            },
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      }
+
+      await User.updateOne(
+        {
+          _id: `${req.params.userid}`,
+          "cart.productId": `${cartItems[i].productId}`,
+        },
+        {
+          $set: { "cart.$.quantity": product.quantity, "cart.$.total": total },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    } else {
       const newQuantity = product.quantity - cartItems[i].quantity;
 
       await Product.findByIdAndUpdate(
@@ -74,32 +109,59 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           runValidators: true,
         }
       );
+
+      if (seller.id == cartItems[i].seller) {
+        let order = {};
+        order.item = cartItems[i];
+        order.orderDate = orderDate;
+        order.orderId = orderId;
+        order.purchasedByName = user.name;
+        order.purchasedByEmail = user.email;
+
+        await User.findByIdAndUpdate(
+          seller.id,
+          {
+            $push: {
+              myProductsPurchased: order,
+            },
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      }
+
+      let cartItem = cartItems[i];
+
+      const order = {
+        cartItem,
+        orderDate,
+        orderId,
+      };
+
+      await User.findByIdAndUpdate(
+        req.params.userid,
+        {
+          $push: {
+            orderHistory: order,
+          },
+          $pull: {
+            cart: {},
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
     }
   }
 
-  const order = {
-    cartItems,
-    orderDate,
-    orderId,
-  };
-
-  await User.findByIdAndUpdate(
-    req.params.userid,
-    {
-      $push: {
-        orderHistory: order,
-      },
-      $pull: {
-        cart: {},
-      },
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  console.log(message);
 
   res.status(200).json({
     success: true,
+    message,
   });
 });

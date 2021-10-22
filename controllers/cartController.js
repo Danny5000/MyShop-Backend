@@ -183,7 +183,7 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
   for (let i = 0; i < cartItems.length; i++) {
     if (cartItems[i].productId === req.params.productid) {
       const item = cartItems[i].productName;
-      //Push a new product & its selected quantity into the cart  item = cartItems[i].name
+      //Delete an item from the cart
       user = await User.findByIdAndUpdate(
         req.params.userid,
         {
