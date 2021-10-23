@@ -15,7 +15,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
     return next(
       new ErrorHandler(
-        `User ${req.user.name} is not allowed to add this product to cart.`,
+        `User ${req.user.name} is not allowed to access this resource.`,
         403
       )
     );
@@ -147,7 +147,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
             orderHistory: order,
           },
           $pull: {
-            cart: {},
+            cart: { productId: `${cartItems[i].productId}` },
           },
         },
         {
@@ -157,8 +157,6 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       );
     }
   }
-
-  console.log(message);
 
   res.status(200).json({
     success: true,

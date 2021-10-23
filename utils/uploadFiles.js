@@ -5,7 +5,7 @@ const uploadFiles = (file, filename, next) => {
   file.mv(`${process.env.UPLOAD_PATH}/${filename}`, async (err) => {
     if (err) {
       console.log(err);
-      return next(new ErrorHandler("Resume upload failed.", 500));
+      return next(new ErrorHandler("File upload failed.", 500));
     }
   });
 

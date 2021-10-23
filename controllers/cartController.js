@@ -16,7 +16,7 @@ exports.getCart = catchAsyncErrors(async (req, res, next) => {
   if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
     return next(
       new ErrorHandler(
-        `User ${req.user.name} is not allowed to add this product to cart.`,
+        `User ${req.user.name} is not allowed to access this resource.`,
         403
       )
     );
@@ -171,7 +171,7 @@ exports.deleteFromCart = catchAsyncErrors(async (req, res, next) => {
   if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
     return next(
       new ErrorHandler(
-        `User ${req.user.name} is not allowed to add this product to cart.`,
+        `User ${req.user.name} is not allowed to access this resource.`,
         403
       )
     );
@@ -233,7 +233,7 @@ exports.updateCart = catchAsyncErrors(async (req, res, next) => {
   if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
     return next(
       new ErrorHandler(
-        `User ${req.user.name} is not allowed to add this product to cart.`,
+        `User ${req.user.name} is not allowed to access this resource.`,
         403
       )
     );

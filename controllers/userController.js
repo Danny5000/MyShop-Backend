@@ -10,16 +10,6 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("User not found", 404));
   }
 
-  //Check whether the current user is the requester
-  if (user.id.toString() !== req.user.id) {
-    return next(
-      new ErrorHandler(
-        `User ${req.user.name} is not allowed to access this resource.`,
-        403
-      )
-    );
-  }
-
   const id = user.id;
   const username = user.userName;
 
@@ -58,11 +48,67 @@ exports.getUserByUserName = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-//Get user by username => /api/v1/user/:id
+//Get user by id => /api/v1/users/:id
 exports.getUserById = catchAsyncErrors(async (req, res, next) => {
   const user = req.params.id;
   const userData = await User.find({ _id: user }).select(
     "-_id -cart -isActive -role -myProductsPurchased -orderHistory"
+  );
+
+  res.status(200).json({
+    success: true,
+    userData,
+  });
+});
+
+//Get the user's order history => /api/v1/user/orderhist/:id
+exports.getOrderHistory = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  //Check whether the current user is the cart owner
+  if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
+    return next(
+      new ErrorHandler(
+        `User ${req.user.name} is not allowed to access this resource.`,
+        403
+      )
+    );
+  }
+
+  const userData = await User.find({ _id: user.id }).select(
+    "-_id -name -userName -email -createdAt -cart -isActive -role -myProductsPurchased"
+  );
+
+  res.status(200).json({
+    success: true,
+    userData,
+  });
+});
+
+//Get the user's products purchased by other users => /api/v1/user/prodspurchased/:id
+exports.getMyProductsPurchased = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  //Check whether the current user is the cart owner
+  if (user.id.toString() !== req.user.id && req.user.role !== "admin") {
+    return next(
+      new ErrorHandler(
+        `User ${req.user.name} is not allowed to access this resource.`,
+        403
+      )
+    );
+  }
+
+  const userData = await User.find({ _id: user.id }).select(
+    "-_id -name -userName -email -createdAt -cart -isActive -role -orderHistory"
   );
 
   res.status(200).json({
