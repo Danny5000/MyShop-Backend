@@ -22,6 +22,9 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   }
 
   let message = "";
+  let total = 0.0;
+  const orders = [];
+  //const prodsSold = [];
   const cartItems = user.cart;
   const orderId = v4();
   const orderDate = new Date(Date.now()).toUTCString();
@@ -133,22 +136,22 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       }
 
       let cartItem = cartItems[i];
+      total += cartItem.total;
+      const sellerName = seller.userName;
 
       const order = {
         cartItem,
-        orderDate,
-        orderId,
+        sellerName,
       };
+
+      orders.push(order);
 
       await User.findByIdAndUpdate(
         req.params.userid,
         {
-          $push: {
-            orderHistory: order,
-          },
-          $pull: {
-            cart: { productId: `${cartItems[i].productId}` },
-          },
+          // $pull: {
+          //   cart: { productId: `${cartItems[i].productId}` },
+          // },
         },
         {
           new: true,
@@ -156,6 +159,22 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         }
       );
     }
+  }
+
+  if (orders.length !== 0) {
+    orders.push({ orderId }, { orderDate }, { total });
+    await User.findByIdAndUpdate(
+      req.params.userid,
+      {
+        $push: {
+          orderHistory: [orders],
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
   }
 
   res.status(200).json({

@@ -20,7 +20,7 @@ router
   .route("/user/orderhist/:id")
   .get(isAuthenticatedUser, authorizeRoles("user", "admin"), getOrderHistory);
 router
-  .route("/user/prodspurchased/:id")
+  .route("/user/itemssold/:id")
   .get(
     isAuthenticatedUser,
     authorizeRoles("user", "admin"),
