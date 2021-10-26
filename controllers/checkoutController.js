@@ -22,9 +22,11 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   }
 
   let message = "";
+
+  //const prodsSold = [];
+
   let total = 0.0;
   const orders = [];
-  //const prodsSold = [];
   const cartItems = user.cart;
   const orderId = v4();
   const orderDate = new Date(Date.now()).toUTCString();
@@ -118,14 +120,17 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         order.item = cartItems[i];
         order.orderDate = orderDate;
         order.orderId = orderId;
-        order.purchasedByName = user.name;
+        order.purchasedByName = user.userName;
         order.purchasedByEmail = user.email;
 
         await User.findByIdAndUpdate(
           seller.id,
           {
             $push: {
-              myProductsPurchased: order,
+              myProductsPurchased: {
+                $each: [order],
+                $position: 0,
+              },
             },
           },
           {
@@ -135,12 +140,12 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         );
       }
 
-      let cartItem = cartItems[i];
-      total += cartItem.total;
+      let orderItem = cartItems[i];
+      total += orderItem.total;
       const sellerName = seller.userName;
 
       const order = {
-        cartItem,
+        orderItem,
         sellerName,
       };
 
@@ -149,9 +154,9 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       await User.findByIdAndUpdate(
         req.params.userid,
         {
-          // $pull: {
-          //   cart: { productId: `${cartItems[i].productId}` },
-          // },
+          $pull: {
+            cart: { productId: `${cartItems[i].productId}` },
+          },
         },
         {
           new: true,
@@ -167,7 +172,10 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       req.params.userid,
       {
         $push: {
-          orderHistory: [orders],
+          orderHistory: {
+            $each: [orders],
+            $position: 0,
+          },
         },
       },
       {
