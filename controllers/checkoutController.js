@@ -23,10 +23,9 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
 
   let message = "";
 
-  //const prodsSold = [];
-
   let total = 0.0;
   const orders = [];
+  let prodsSold = [];
   const cartItems = user.cart;
   const orderId = v4();
   const orderDate = new Date(Date.now()).toUTCString();
@@ -115,31 +114,6 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         }
       );
 
-      if (seller.id == cartItems[i].seller) {
-        let order = {};
-        order.item = cartItems[i];
-        order.orderDate = orderDate;
-        order.orderId = orderId;
-        order.purchasedByName = user.userName;
-        order.purchasedByEmail = user.email;
-
-        await User.findByIdAndUpdate(
-          seller.id,
-          {
-            $push: {
-              myProductsPurchased: {
-                $each: [order],
-                $position: 0,
-              },
-            },
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
-      }
-
       let orderItem = cartItems[i];
       total += orderItem.total;
       const sellerName = seller.userName;
@@ -164,6 +138,53 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         }
       );
     }
+  }
+
+  if (orders.length !== 0) {
+    let total = 0.0;
+    let temp = [];
+    for (let i = 0; i < orders.length; i++) {
+      const seller = await User.findById(orders[i].orderItem.seller);
+      if (!seller) {
+        return next(
+          new ErrorHandler(
+            "Error: Could not process checkout -- The seller no longer exists",
+            500
+          )
+        );
+      }
+      for (let j = 0; j < orders.length; j++) {
+        if (
+          seller.id == orders[j].orderItem.seller &&
+          temp.every((e) => e != seller.id)
+        ) {
+          total += orders[j].orderItem.total * orders[j].orderItem.quantity;
+          prodsSold.push(orders[j].orderItem);
+        }
+      }
+      if (prodsSold.length !== 0) {
+        prodsSold.push({ orderId }, { orderDate }, { total });
+        await User.findByIdAndUpdate(
+          seller.id,
+          {
+            $push: {
+              myProductsPurchased: {
+                $each: [prodsSold],
+                $position: 0,
+              },
+            },
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      }
+      temp.push(orders[i].orderItem.seller);
+      prodsSold = [];
+      total = 0.0;
+    }
+    temp = [];
   }
 
   if (orders.length !== 0) {
