@@ -6,7 +6,6 @@ const v4 = require("uuid/v4");
 
 exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   const user = await User.findById(req.params.userid);
-
   if (!user) {
     return next(new ErrorHandler("User not found", 404));
   }
@@ -21,8 +20,6 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  let message = "";
-
   let total = 0.0;
   const orders = [];
   let prodsSold = [];
@@ -36,8 +33,6 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
     const product = await Product.findById(cartItems[i].productId);
 
     if (!seller) {
-      message += `The seller for ${cartItems[i].productName} no longer exists. \n`;
-
       await User.findByIdAndUpdate(
         req.params.userid,
         {
@@ -49,10 +44,15 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           new: true,
           runValidators: true,
         }
+      );
+
+      return next(
+        new ErrorHandler(
+          `The seller for ${cartItems[i].productName} no longer exists. \n`,
+          404
+        )
       );
     } else if (!product) {
-      message += `Product "${cartItems[i].productName}" no longer exists or has been removed. \n`;
-
       await User.findByIdAndUpdate(
         req.params.userid,
         {
@@ -65,9 +65,14 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           runValidators: true,
         }
       );
-    } else if (cartItems[i].quantity > product.quantity) {
-      message += `The quantiy of ${cartItems[i].quantity} you selected for item "${cartItems[i].productName}" exceeds the available stock of ${product.quantity}. \n`;
 
+      return next(
+        new ErrorHandler(
+          `Product "${cartItems[i].productName}" no longer exists or has been removed. \n`,
+          404
+        )
+      );
+    } else if (cartItems[i].quantity > product.quantity) {
       const total = product.price * product.quantity;
 
       if (product.quantity == 0) {
@@ -97,6 +102,12 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           new: true,
           runValidators: true,
         }
+      );
+      return next(
+        new ErrorHandler(
+          `The quantiy of ${cartItems[i].quantity} you selected for item "${cartItems[i].productName}" exceeds the available stock of ${product.quantity}. Cart quantity updated. \n`,
+          400
+        )
       );
     } else {
       const newQuantity = product.quantity - cartItems[i].quantity;
@@ -141,8 +152,9 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (orders.length !== 0) {
-    let total = 0.0;
+    let orderTotal = 0.0;
     let temp = [];
+    const buyerUserName = user.userName;
     for (let i = 0; i < orders.length; i++) {
       const seller = await User.findById(orders[i].orderItem.seller);
       if (!seller) {
@@ -158,12 +170,20 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           seller.id == orders[j].orderItem.seller &&
           temp.every((e) => e != seller.id)
         ) {
-          total += orders[j].orderItem.total * orders[j].orderItem.quantity;
+          orderTotal +=
+            orders[j].orderItem.total * orders[j].orderItem.quantity;
           prodsSold.push(orders[j].orderItem);
         }
       }
       if (prodsSold.length !== 0) {
-        prodsSold.push({ orderId }, { orderDate }, { total });
+        prodsSold.push(
+          { orderId },
+          { orderDate },
+          { orderTotal },
+          { buyerUserName },
+          { email: user.email },
+          { custDetails: req.body.custDetails }
+        );
         await User.findByIdAndUpdate(
           seller.id,
           {
@@ -182,7 +202,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       }
       temp.push(orders[i].orderItem.seller);
       prodsSold = [];
-      total = 0.0;
+      orderTotal = 0.0;
     }
     temp = [];
   }
@@ -208,6 +228,5 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message,
   });
 });
