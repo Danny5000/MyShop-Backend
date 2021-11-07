@@ -12,10 +12,14 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
 
   const id = user.id;
   const username = user.userName;
+  const isSeller = user.isSeller;
 
   res.status(200).json({
     id,
     username,
+    isSeller,
+    stripeId: user.stripe_account_id,
+    stripeProfile: user.stripe_seller,
   });
 });
 

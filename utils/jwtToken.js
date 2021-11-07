@@ -20,6 +20,7 @@ const sendToken = (user, statusCode, res) => {
     success: true,
     id: user.id,
     username: user.userName,
+    isSeller: user.isSeller,
   });
 };
 

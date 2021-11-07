@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 
 const connectDB = require("./config/database");
 const errorMiddleware = require("./middleware/error");
@@ -49,17 +50,9 @@ app.use(
 );
 
 //--------------Routes------------------
-const auth = require("./routes/auth");
-const products = require("./routes/products");
-const cart = require("./routes/cart");
-const user = require("./routes/user");
-const checkout = require("./routes/checkout");
-
-app.use("/api/v1", auth);
-app.use("/api/v1", products);
-app.use("/api/v1", cart);
-app.use("/api/v1", user);
-app.use("/api/v1", checkout);
+fs.readdirSync("./routes").map((r) =>
+  app.use("/api/v1", require(`./routes/${r}`))
+);
 
 //Handle unhandled routes
 app.all("*", (req, res, next) => {

@@ -35,6 +35,11 @@ exports.getProductById = catchAsyncErrors(async (req, res, next) => {
 
 //Create a new product => /api/v1/product/new
 exports.newProduct = catchAsyncErrors(async (req, res, next) => {
+  if (req.user.isSeller === false) {
+    return next(
+      new ErrorHandler("You are not allowed to post a product.", 403)
+    );
+  }
   //Adding user to body
   req.body.user = req.user.id;
 
