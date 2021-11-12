@@ -58,6 +58,7 @@ const userSchema = new mongoose.Schema(
     stripe_account_id: "",
     stripe_seller: {},
     stripeSession: {},
+    stripeSession: {},
     isSeller: {
       type: Boolean,
       required: true,

@@ -43,7 +43,7 @@ app.use(express.static("public"));
 //Set up CORS - accessible by other domains
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://stripe.com"],
     credentials: true,
     optionsSuccessStatus: 200,
   })

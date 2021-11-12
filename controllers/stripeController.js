@@ -3,6 +3,7 @@ const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const queryString = require("query-string");
+const axios = require("axios");
 
 //Direct user to stripe onboarding => /api/v1/makeSeller
 exports.makeSeller = catchAsyncErrors(async (req, res, next) => {
@@ -20,7 +21,7 @@ exports.makeSeller = catchAsyncErrors(async (req, res, next) => {
     }
 
     if (user.isSeller === true) {
-      return next(new ErrorHandler("User is already a seller", 400));
+      return res.send("add-product");
     }
 
     let accountLink = await stripe.accountLinks.create({
@@ -77,4 +78,111 @@ exports.getAccountStatus = catchAsyncErrors(async (req, res, next) => {
   } catch (err) {
     console.log("Make-seller error.", err);
   }
+});
+
+exports.processStripeCheckout = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new ErrorHandler("Checkout failed - user not found!", 404));
+  }
+
+  const cart = user.cart;
+
+  const stripeLineItems = cart.map((item) => ({
+    name: item.productName,
+    amount: Math.round(item.total.toFixed(2) * 100),
+    currency: "usd",
+    quantity: item.quantity,
+  }));
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+
+    line_items: stripeLineItems,
+    billing_address_collection: "required",
+    shipping_address_collection: {
+      allowed_countries: ["US"],
+    },
+
+    success_url: `${process.env.STRIPE_SUCCESS_URL}`,
+    cancel_url: `${process.env.STRIPE_CANCEL_URL}`,
+  });
+
+  await User.findByIdAndUpdate(req.user.id, { stripeSession: session });
+
+  res.json(session.id);
+});
+
+exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return next(new ErrorHandler("User not found.", 404));
+  }
+
+  if (!user.stripeSession.id) {
+    return next(
+      new ErrorHandler("Invalid attempt to access this resource.", 400)
+    );
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(
+    user.stripeSession.id
+  );
+
+  if (session.payment_status !== "paid") {
+    return next(
+      new ErrorHandler("Invalid attempt to access this resource.", 400)
+    );
+  }
+
+  const cart = user.cart;
+
+  for (let i = 0; i < cart.length; i++) {
+    const seller = await User.findById(cart[i].seller);
+    const stripe_account_id = seller.stripe_account_id;
+
+    await stripe.paymentIntents.create({
+      amount: Math.round(cart[i].total.toFixed(2) * 100),
+      currency: "usd",
+      payment_method_types: ["card"],
+      application_fee_amount: Math.round(cart[i].total.toFixed(2) * 25),
+      on_behalf_of: `${stripe_account_id}`,
+      transfer_data: {
+        destination: `${stripe_account_id}`,
+      },
+    });
+  }
+
+  const custDetails = {
+    name: session.shipping.name,
+    streetAddress: session.shipping.address.line1,
+    city: session.shipping.address.city,
+    state: session.shipping.address.state,
+    zipCode: session.shipping.address.postal_code,
+  };
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    const token = req.headers.authorization.split(" ")[1];
+    await axios.post(
+      `${process.env.API_URL}/checkout/${user.id}`,
+      { custDetails },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  await User.findByIdAndUpdate(user.id, {
+    $set: { stripeSession: {} },
+  });
+
+  res.json({ success: true });
 });

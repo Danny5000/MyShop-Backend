@@ -16,11 +16,12 @@ const sendToken = (user, statusCode, res) => {
   //   }
 
   res.status(statusCode).cookie("token", token, options).json({
-    token,
-    success: true,
     id: user.id,
     username: user.userName,
+    token,
     isSeller: user.isSeller,
+    stripeId: user.stripe_account_id,
+    stripeProfile: user.stripe_seller,
   });
 };
 
