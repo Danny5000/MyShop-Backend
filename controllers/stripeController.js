@@ -1,4 +1,5 @@
 const User = require("../models/users");
+const Product = require("../models/products");
 const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);

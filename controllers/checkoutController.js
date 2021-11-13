@@ -32,123 +32,44 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
 
     const product = await Product.findById(cartItems[i].productId);
 
-    if (!seller) {
-      await User.findByIdAndUpdate(
-        req.params.userid,
-        {
-          $pull: {
-            cart: { productId: `${cartItems[i].productId}` },
-          },
+    const newQuantity = product.quantity - cartItems[i].quantity;
+
+    await Product.findByIdAndUpdate(
+      product.id,
+      {
+        $set: {
+          quantity: newQuantity,
         },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-
-      return next(
-        new ErrorHandler(
-          `The seller for ${cartItems[i].productName} no longer exists. \n`,
-          404
-        )
-      );
-    } else if (!product) {
-      await User.findByIdAndUpdate(
-        req.params.userid,
-        {
-          $pull: {
-            cart: { productId: `${cartItems[i].productId}` },
-          },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-
-      return next(
-        new ErrorHandler(
-          `Product "${cartItems[i].productName}" no longer exists or has been removed. \n`,
-          404
-        )
-      );
-    } else if (cartItems[i].quantity > product.quantity) {
-      const total = product.price * product.quantity;
-
-      if (product.quantity == 0) {
-        await User.findByIdAndUpdate(
-          req.params.userid,
-          {
-            $pull: {
-              cart: { productId: `${cartItems[i].productId}` },
-            },
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
+      },
+      {
+        new: true,
+        runValidators: true,
       }
+    );
 
-      await User.updateOne(
-        {
-          _id: `${req.params.userid}`,
-          "cart.productId": `${cartItems[i].productId}`,
+    let orderItem = cartItems[i];
+    total += orderItem.total;
+    const sellerName = seller.userName;
+
+    const order = {
+      orderItem,
+      sellerName,
+    };
+
+    orders.push(order);
+
+    await User.findByIdAndUpdate(
+      req.params.userid,
+      {
+        $pull: {
+          cart: { productId: `${cartItems[i].productId}` },
         },
-        {
-          $set: { "cart.$.quantity": product.quantity, "cart.$.total": total },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-      return next(
-        new ErrorHandler(
-          `The quantiy of ${cartItems[i].quantity} you selected for item "${cartItems[i].productName}" exceeds the available stock of ${product.quantity}. Cart quantity updated. \n`,
-          400
-        )
-      );
-    } else {
-      const newQuantity = product.quantity - cartItems[i].quantity;
-
-      await Product.findByIdAndUpdate(
-        product.id,
-        {
-          $set: {
-            quantity: newQuantity,
-          },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-
-      let orderItem = cartItems[i];
-      total += orderItem.total;
-      const sellerName = seller.userName;
-
-      const order = {
-        orderItem,
-        sellerName,
-      };
-
-      orders.push(order);
-
-      await User.findByIdAndUpdate(
-        req.params.userid,
-        {
-          $pull: {
-            cart: { productId: `${cartItems[i].productId}` },
-          },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-    }
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
   }
 
   if (orders.length !== 0) {
@@ -229,4 +150,100 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({
     success: true,
   });
+});
+
+exports.validateCart = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  const cart = user.cart;
+
+  //Begin cart validation
+  for (let i = 0; i < cart.length; i++) {
+    const seller = await User.findById(cart[i].seller);
+
+    const product = await Product.findById(cart[i].productId);
+
+    if (!seller) {
+      await User.findByIdAndUpdate(
+        user.id,
+        {
+          $pull: {
+            cart: { productId: `${cart[i].productId}` },
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      return next(
+        new ErrorHandler(
+          `The seller for ${cart[i].productName} no longer exists. \n`,
+          404
+        )
+      );
+    } else if (!product) {
+      await User.findByIdAndUpdate(
+        user.id,
+        {
+          $pull: {
+            cart: { productId: `${cart[i].productId}` },
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      return next(
+        new ErrorHandler(
+          `Product "${cart[i].productName}" no longer exists or has been removed.`,
+          404
+        )
+      );
+    } else if (cart[i].quantity > product.quantity) {
+      const total = product.price * product.quantity;
+
+      if (product.quantity == 0) {
+        await User.findByIdAndUpdate(
+          user.id,
+          {
+            $pull: {
+              cart: { productId: `${cart[i].productId}` },
+            },
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      }
+
+      await User.updateOne(
+        {
+          _id: `${user.id}`,
+          "cart.productId": `${cart[i].productId}`,
+        },
+        {
+          $set: { "cart.$.quantity": product.quantity, "cart.$.total": total },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      return next(
+        new ErrorHandler(
+          `The quantiy of ${cart[i].quantity} you selected for item "${cart[i].productName}" exceeds the available stock of ${product.quantity}.`,
+          400
+        )
+      );
+    }
+  }
+  res.json({ success: true });
 });
