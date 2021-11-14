@@ -91,8 +91,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           seller.id == orders[j].orderItem.seller &&
           temp.every((e) => e != seller.id)
         ) {
-          orderTotal +=
-            orders[j].orderItem.total * orders[j].orderItem.quantity;
+          orderTotal += orders[j].orderItem.total;
           prodsSold.push(orders[j].orderItem);
         }
       }
@@ -182,7 +181,7 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
 
       return next(
         new ErrorHandler(
-          `The seller for ${cart[i].productName} no longer exists. \n`,
+          `The seller for ${cart[i].productName} no longer exists. Your selection has been updated to reflect this.`,
           404
         )
       );
@@ -202,7 +201,7 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
 
       return next(
         new ErrorHandler(
-          `Product "${cart[i].productName}" no longer exists or has been removed.`,
+          `Product "${cart[i].productName}" no longer exists or has been removed. Your selection has been updated to reflect this.`,
           404
         )
       );
@@ -239,7 +238,7 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
       );
       return next(
         new ErrorHandler(
-          `The quantiy of ${cart[i].quantity} you selected for item "${cart[i].productName}" exceeds the available stock of ${product.quantity}.`,
+          `The quantiy of ${cart[i].quantity} you selected for item "${cart[i].productName}" exceeds the available stock of ${product.quantity}. Your selection has been updated to reflect this.`,
           400
         )
       );

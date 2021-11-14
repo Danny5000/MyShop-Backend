@@ -19,7 +19,6 @@ exports.me = catchAsyncErrors(async (req, res, next) => {
     username,
     isSeller,
     stripeId: user.stripe_account_id,
-    stripeProfile: user.stripe_seller,
   });
 });
 

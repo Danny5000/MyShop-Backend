@@ -1,10 +1,11 @@
 const User = require("../models/users");
-const Product = require("../models/products");
 const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const queryString = require("query-string");
 const axios = require("axios");
+const getTotal = require("../utils/getTotal");
+const v4 = require("uuid/v4");
 
 //Direct user to stripe onboarding => /api/v1/makeSeller
 exports.makeSeller = catchAsyncErrors(async (req, res, next) => {
@@ -89,10 +90,11 @@ exports.processStripeCheckout = catchAsyncErrors(async (req, res, next) => {
   }
 
   const cart = user.cart;
+  const cartTotal = getTotal(cart);
 
   const stripeLineItems = cart.map((item) => ({
     name: item.productName,
-    amount: Math.round(item.total.toFixed(2) * 100),
+    amount: Math.round(item.total.toFixed(2) * 100) / item.quantity,
     currency: "usd",
     quantity: item.quantity,
   }));
@@ -132,6 +134,8 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
     user.stripeSession.id
   );
 
+  console.log(session);
+
   if (session.payment_status !== "paid") {
     return next(
       new ErrorHandler("Invalid attempt to access this resource.", 400)
@@ -139,20 +143,27 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
   }
 
   const cart = user.cart;
+  const groupId = v4();
 
   for (let i = 0; i < cart.length; i++) {
     const seller = await User.findById(cart[i].seller);
     const stripe_account_id = seller.stripe_account_id;
 
-    await stripe.paymentIntents.create({
-      amount: Math.round(cart[i].total.toFixed(2) * 100),
+    const stripeFee = 0.029;
+    const additionalStripeCharge = 30;
+    const platformFee = 0.1;
+
+    const amount = Math.round(cart[i].total.toFixed(2) * 100);
+    const deduction =
+      amount * (stripeFee + platformFee) + additionalStripeCharge;
+
+    const transferAmount = amount - deduction;
+
+    await stripe.transfers.create({
+      amount: transferAmount,
       currency: "usd",
-      payment_method_types: ["card"],
-      application_fee_amount: Math.round(cart[i].total.toFixed(2) * 25),
-      on_behalf_of: `${stripe_account_id}`,
-      transfer_data: {
-        destination: `${stripe_account_id}`,
-      },
+      destination: `${stripe_account_id}`,
+      transfer_group: groupId,
     });
   }
 
@@ -181,9 +192,9 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  await User.findByIdAndUpdate(user.id, {
-    $set: { stripeSession: {} },
-  });
+  //   await User.findByIdAndUpdate(user.id, {
+  //     $set: { stripeSession: {} },
+  //   });
 
   res.json({ success: true });
 });

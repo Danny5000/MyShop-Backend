@@ -21,7 +21,6 @@ const sendToken = (user, statusCode, res) => {
     token,
     isSeller: user.isSeller,
     stripeId: user.stripe_account_id,
-    stripeProfile: user.stripe_seller,
   });
 };
 
