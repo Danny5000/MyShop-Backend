@@ -134,8 +134,6 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
     user.stripeSession.id
   );
 
-  console.log(session);
-
   if (session.payment_status !== "paid") {
     return next(
       new ErrorHandler("Invalid attempt to access this resource.", 400)
@@ -144,14 +142,13 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
 
   const cart = user.cart;
   const groupId = v4();
+  const stripeFee = 0.029;
+  const additionalStripeCharge = 30;
+  const platformFee = 0.1;
 
   for (let i = 0; i < cart.length; i++) {
     const seller = await User.findById(cart[i].seller);
     const stripe_account_id = seller.stripe_account_id;
-
-    const stripeFee = 0.029;
-    const additionalStripeCharge = 30;
-    const platformFee = 0.1;
 
     const amount = Math.round(cart[i].total.toFixed(2) * 100);
     const deduction =
@@ -192,9 +189,9 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
-  //   await User.findByIdAndUpdate(user.id, {
-  //     $set: { stripeSession: {} },
-  //   });
+  await User.findByIdAndUpdate(user.id, {
+    $set: { stripeSession: {} },
+  });
 
   res.json({ success: true });
 });

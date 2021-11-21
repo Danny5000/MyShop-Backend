@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-//const crypto = require("crypto");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -58,14 +58,13 @@ const userSchema = new mongoose.Schema(
     stripe_account_id: "",
     stripe_seller: {},
     stripeSession: {},
-    stripeSession: {},
     isSeller: {
       type: Boolean,
       required: true,
       default: false,
     },
-    //resetPasswordToken: String,
-    //resetPasswordExpire: Date,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   {
     toJSON: {
@@ -105,6 +104,23 @@ userSchema.methods.getJwtToken = function () {
 //Compare user password with database password
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+//Generated password reset token
+userSchema.methods.getResetPasswordToken = function () {
+  //Generate token
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  //Hash and set to resetPasswordToken
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  //set token expire time
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
+
+  return resetToken;
 };
 
 userSchema.virtual("productData", {
