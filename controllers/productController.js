@@ -5,13 +5,24 @@ const deleteFiles = require("../utils/deleteFiles");
 const uploadFiles = require("../utils/uploadFiles");
 const path = require("path");
 const v4 = require("uuid/v4");
+const APIFilters = require("../utils/apiFilters");
 
 //Get all products => /api/v1/products
 exports.getProducts = catchAsyncErrors(async (req, res, next) => {
-  const products = await Product.find().populate({
-    path: "userData",
-    select: "userName -_id",
-  });
+  const apiFilters = new APIFilters(
+    Product.find().populate({
+      path: "userData",
+      select: "userName -_id",
+    }),
+    req.query
+  )
+    .filter()
+    .sort()
+    .limitFields()
+    .searchByQuery()
+    .pagination();
+
+  const products = await apiFilters.query;
 
   res.status(200).json({
     success: true,
