@@ -4,7 +4,6 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const queryString = require("query-string");
 const axios = require("axios");
-const getTotal = require("../utils/getTotal");
 const v4 = require("uuid/v4");
 
 //Direct user to stripe onboarding => /api/v1/makeSeller
@@ -90,7 +89,6 @@ exports.processStripeCheckout = catchAsyncErrors(async (req, res, next) => {
   }
 
   const cart = user.cart;
-  const cartTotal = getTotal(cart);
 
   const stripeLineItems = cart.map((item) => ({
     name: item.productName,

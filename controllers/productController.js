@@ -16,9 +16,6 @@ exports.getProducts = catchAsyncErrors(async (req, res, next) => {
     }),
     req.query
   )
-    .filter()
-    .sort()
-    .limitFields()
     .searchByQuery()
     .pagination();
 

@@ -27,7 +27,7 @@ class APIFilters {
       const sortBy = this.queryStr.sort.split(",").join(" ");
       this.query = this.query.sort(sortBy);
     } else {
-      this.query = this.query.sort("-postingDate");
+      this.query = this.query.sort("-createdAt");
     }
     return this;
   }
