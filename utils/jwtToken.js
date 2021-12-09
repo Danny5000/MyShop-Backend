@@ -11,15 +11,17 @@ const sendToken = (user, statusCode, res) => {
     httpOnly: true,
   };
 
-  //   if (process.env.NODE_ENV === "production") {
-  //     options.secure = true;
-  //   }
+  // if (process.env.NODE_ENV === "production") {
+  //   options.secure = true;
+  // }
 
   res.status(statusCode).cookie("token", token, options).json({
     id: user.id,
     username: user.userName,
+    role: user.role,
     isSeller: user.isSeller,
     stripeId: user.stripe_account_id,
+    token,
   });
 };
 

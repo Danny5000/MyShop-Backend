@@ -152,7 +152,7 @@ exports.stripeSuccess = catchAsyncErrors(async (req, res, next) => {
     const deduction =
       amount * (stripeFee + platformFee) + additionalStripeCharge;
 
-    const transferAmount = amount - deduction;
+    const transferAmount = Math.round(amount - deduction);
 
     await stripe.transfers.create({
       amount: transferAmount,

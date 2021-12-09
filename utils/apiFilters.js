@@ -45,7 +45,9 @@ class APIFilters {
   searchByQuery() {
     if (this.queryStr.q) {
       const qu = this.queryStr.q.split("-").join(" ");
-      this.query = this.query.find({ $text: { $search: '"' + qu + '"' } });
+      this.query = this.query.find({
+        name: { $regex: `\\b${qu}.*\\b`, $options: "i" },
+      });
     }
     return this;
   }
