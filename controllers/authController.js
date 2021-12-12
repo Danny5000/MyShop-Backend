@@ -102,6 +102,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   \nThis link will expire in 30 minutes.
   \nIf you did not request this password, please ignore this email.`;
 
+  //Send password resent email. If unsuccessful, reset token and expiry
   try {
     await sendEmail({
       email: user.email,
@@ -132,6 +133,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
     .update(req.params.token)
     .digest("hex");
 
+  //Attempt to find the user with the token that isn't expired
   const user = await User.findOne({
     resetPasswordToken,
     resetPasswordExpire: { $gt: Date.now() },

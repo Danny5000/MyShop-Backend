@@ -1,3 +1,5 @@
+//Take a cart object and loop through adding
+//all product prices to the total
 function getTotal(cart) {
   let totalPrice = 0.0;
 

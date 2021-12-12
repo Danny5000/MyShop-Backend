@@ -44,6 +44,7 @@ const productSchema = new mongoose.Schema(
     },
   },
   {
+    //Format id field
     toJSON: {
       transform: function (doc, ret) {
         ret.id = ret._id;
@@ -63,6 +64,7 @@ productSchema.pre("save", function (next) {
   next();
 });
 
+//Allow to use virtual fields from the user collection
 productSchema.virtual("userData", {
   ref: "User",
   localField: "user",

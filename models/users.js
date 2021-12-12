@@ -66,6 +66,7 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },
+  //Format the id field
   {
     toJSON: {
       transform: function (doc, ret) {
@@ -123,6 +124,7 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
+//Allow the use of virtual fields from the product model
 userSchema.virtual("productData", {
   ref: "Product",
   localField: "_id",

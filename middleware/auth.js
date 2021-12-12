@@ -7,6 +7,7 @@ const ErrorHandler = require("../utils/errorHandler");
 exports.isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
   let token;
 
+  //Get the JSON web token from the request header
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
@@ -20,9 +21,11 @@ exports.isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+  //Get the user id from the JSON web token
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   req.user = await User.findById(decoded.id);
 
+  //Is the user active?
   if (!req.user.isActive && req.originalUrl !== "/api/v1/logout") {
     res.cookie("token", "none", {
       expires: new Date(Date.now()),

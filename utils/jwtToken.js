@@ -15,6 +15,7 @@ const sendToken = (user, statusCode, res) => {
   //   options.secure = true;
   // }
 
+  //Send back cookie with token using options
   res.status(statusCode).cookie("token", token, options).json({
     id: user.id,
     username: user.userName,

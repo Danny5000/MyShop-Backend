@@ -45,6 +45,7 @@ class APIFilters {
   searchByQuery() {
     if (this.queryStr.q) {
       const qu = this.queryStr.q.split("-").join(" ");
+      //Query the DB using a regex containing the query string
       this.query = this.query.find({
         name: { $regex: `\\b${qu}.*\\b`, $options: "i" },
       });
@@ -53,7 +54,9 @@ class APIFilters {
   }
 
   pagination() {
+    //What is the page #? Default is page 1
     const page = parseInt(this.queryStr.page, 10) || 1;
+    //What are the contents per page? Default is 10
     const limit = parseInt(this.queryStr.limit, 10) || 10;
     const skipResults = (page - 1) * limit;
 

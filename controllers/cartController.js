@@ -24,6 +24,7 @@ exports.getCart = catchAsyncErrors(async (req, res, next) => {
 
   const cartItems = user.cart;
 
+  //Get the total price of all items in the cart
   const totalPrice = getTotal(cartItems);
 
   res.status(200).json({

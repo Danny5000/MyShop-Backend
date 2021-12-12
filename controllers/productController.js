@@ -116,12 +116,15 @@ exports.updateProduct = catchAsyncErrors(async (req, res, next) => {
     runValidators: true,
   });
 
+  //Do we have a file in the request?
   if (req.files) {
+    //Set the file, the file's id, name and what files are supported
     const file = req.files.imageUrl;
     const pictureId = v4();
     file.name = `${req.user.id}_${pictureId}_${file.name}`;
     const supportedFiles = /.jpeg|.jpg|.png|.svg/;
 
+    //Check if file is supported
     if (!supportedFiles.test(path.extname(file.name))) {
       return next(new ErrorHandler("Please upload an image file.", 400));
     }

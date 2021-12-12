@@ -32,6 +32,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
 
     const product = await Product.findById(cartItems[i].productId);
 
+    //Update the product stock if checkout is successful
     const newQuantity = product.quantity - cartItems[i].quantity;
 
     await Product.findByIdAndUpdate(
@@ -47,6 +48,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
       }
     );
 
+    //Push each item in the cart to the order array
     let orderItem = cartItems[i];
     total += orderItem.total;
     const sellerName = seller.userName;
@@ -58,6 +60,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
 
     orders.push(order);
 
+    //Remove the items from the user's cart
     await User.findByIdAndUpdate(
       req.params.userid,
       {
@@ -72,6 +75,8 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
     );
   }
 
+  //For each seller, add all products purchased by a buyer
+  //in that order to their products sold array
   if (orders.length !== 0) {
     let orderTotal = 0.0;
     let temp = [];
@@ -87,6 +92,8 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
         );
       }
       for (let j = 0; j < orders.length; j++) {
+        //Do not add the same product for the same
+        //seller multiple times
         if (
           seller.id == orders[j].orderItem.seller &&
           temp.every((e) => e != seller.id)
@@ -95,6 +102,8 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
           prodsSold.push(orders[j].orderItem);
         }
       }
+      //Add all products sold in that order to the
+      //prodsSold array before saving to DB
       if (prodsSold.length !== 0) {
         prodsSold.push(
           { orderId },
@@ -127,6 +136,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
     temp = [];
   }
 
+  //Save the order in the buyer's order history
   if (orders.length !== 0) {
     orders.push({ orderId }, { orderDate }, { total });
     await User.findByIdAndUpdate(
@@ -151,6 +161,7 @@ exports.handlePurchase = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+//Controller to validate the cart before a user checks out
 exports.validateCart = catchAsyncErrors(async (req, res, next) => {
   const user = await User.findById(req.user.id);
   if (!user) {
@@ -165,6 +176,7 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
 
     const product = await Product.findById(cart[i].productId);
 
+    //If seller no longer exists, remove product from cart
     if (!seller) {
       await User.findByIdAndUpdate(
         user.id,
@@ -185,6 +197,7 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
           404
         )
       );
+      //If product no longer exists, remove product from cart
     } else if (!product) {
       await User.findByIdAndUpdate(
         user.id,
@@ -205,9 +218,11 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
           404
         )
       );
+      //If cart quantity exceeds product stock
     } else if (cart[i].quantity > product.quantity) {
       const total = product.price * product.quantity;
 
+      //If the stock of the product is 0, remove from cart
       if (product.quantity == 0) {
         await User.findByIdAndUpdate(
           user.id,
@@ -223,6 +238,8 @@ exports.validateCart = catchAsyncErrors(async (req, res, next) => {
         );
       }
 
+      //If stock is not 0, adjust the quantity of the user's cart
+      //quantity will match the current available stock
       await User.updateOne(
         {
           _id: `${user.id}`,
